@@ -1,17 +1,15 @@
 import json
-
-from flask import Flask, jsonify, request
+from flask import Flask, request
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.orm import relationship
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///data.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+app.config['SQLALCHEMY_ECHO'] =True
 
 app.config['JSON_AS_ASCII'] = False
 
-# ????
-app.url_map.strict_slashes = False
 
 db = SQLAlchemy(app)
 
@@ -25,18 +23,18 @@ path_offers = './data/offers.json'
 
 
 class User(db.Model):
-	__tablename__ = "user"
+	__tablename__ = 'user'
 	id = db.Column(db.Integer, primary_key=True)
 	first_name = db.Column(db.String)
 	last_name = db.Column(db.String)
 	age = db.Column(db.Integer)
 	email = db.Column(db.String)
 	role = db.Column(db.String)
-	phone = db.Column(db.Integer)
+	phone = db.Column(db.String)
 
 
 class Order(db.Model):
-	__tablename__ = "order"
+	__tablename__ = 'order'
 	id = db.Column(db.Integer, primary_key=True)
 	name = db.Column(db.String)
 	description = db.Column(db.String)
@@ -44,19 +42,21 @@ class Order(db.Model):
 	end_date = db.Column(db.Integer)
 	address = db.Column(db.String)
 	price = db.Column(db.Integer)
-	customer_id = db.Column(db.Integer)
-	executor_id = db.Column(db.Integer)
+	customer_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+	executor_id = db.Column(db.Integer, db.ForeignKey('user.id'))
 
-	offer = db.relationship("Offer")
+	customer = db.relationship('User', foreign_keys=[customer_id])
+	executor = db.relationship('User', foreign_keys=[executor_id])
 
 
 class Offer(db.Model):
-	__tablename__ = "offer"
+	__tablename__ = 'offer'
 	id = db.Column(db.Integer, primary_key=True)
-	order_id = db.Column(db.Integer, db.ForeignKey("order.id"))
-	executor_id = db.Column(db.Integer) #, db.ForeignKey("order.executor_id"))
+	order_id = db.Column(db.Integer, db.ForeignKey('order.id'))
+	executor_id = db.Column(db.Integer, db.ForeignKey('user.id'))
 
-	order = relationship("Order")
+	order = db.relationship('Order', foreign_keys=[order_id])
+	executor = db.relationship('User', foreign_keys=[executor_id])
 
 
 db.create_all()  # Создать таблицы
@@ -73,13 +73,13 @@ def table_filler(path: str, cls: any):
 		data = json.load(file)
 		for user_data in data:
 			user = cls(**user_data)
-			# user = User(id=user_data.id, first_name=user_data.first_name,
-			#             last_name=user_data.last_name, age=user_data.age,
-			#             email=user_data.email, role=user_data.role, phone=user_data.phone)
 			db.session.add(user)
 		db.session.commit()
 
 
+# # Заполняем таблицы
+# table_filler(path_users, User)
+# table_filler(path_orders, Order)
 # table_filler(path_offers, Offer)
 
 
@@ -195,19 +195,8 @@ def add_user_to_users():
 @app.put('/users/<int:pk>')
 def update_user_by_pk(pk):
 	data = request.json
-	# user = User.query.get(pk)
-	# user = User(**data)
-	# user.id = data.id
-	# user.first_name = data.first_name
-	# user.last_name = data.last_name
-	# user.age = data.age
-	# user.email = data.email
-	# user.role = data.role
-	# user.phone = data.phone
 
 	db.session.execute(db.update(User).where(User.id == pk).values(**data))
-
-	# db.session.add(user)
 	db.session.commit()
 	return 'User updated'
 
