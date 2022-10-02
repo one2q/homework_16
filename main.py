@@ -47,23 +47,23 @@ class Order(db.Model):
 	customer_id = db.Column(db.Integer)
 	executor_id = db.Column(db.Integer)
 
-	# offer = db.relationship("Offer")
+	offer = db.relationship("Offer")
 
 
 class Offer(db.Model):
 	__tablename__ = "offer"
 	id = db.Column(db.Integer, primary_key=True)
-	order_id = db.Column(db.Integer)  # , db.ForeignKey("order.id"))
-	executor_id = db.Column(db.Integer)  # , db.ForeignKey("order.executor_id"))
+	order_id = db.Column(db.Integer, db.ForeignKey("order.id"))
+	executor_id = db.Column(db.Integer) #, db.ForeignKey("order.executor_id"))
 
-	# order = relationship("Order")
+	order = relationship("Order")
 
 
 db.create_all()  # Создать таблицы
 # db.drop_all()  # Удалить таблицы
 
 
-def table_filler(path: str, cls):
+def table_filler(path: str, cls: any):
 	"""
 	Функция заполнения таблиц
 	:param path: путь к файлу json с данными
@@ -79,8 +79,8 @@ def table_filler(path: str, cls):
 			db.session.add(user)
 		db.session.commit()
 
-	# print(data)
-	# print(type(data[0]))
+
+# table_filler(path_offers, Offer)
 
 
 @app.get('/users')
@@ -192,15 +192,24 @@ def add_user_to_users():
 		return 'Can not add this user'
 
 
-#  Пока не работает :(((
-# @app.put('/users/<int:pk>')
-# def update_user_by_pk(pk):
-# 	data = request.json
-# 	user = User.query.get(pk)
-# 	user = User(**data)
-# 	db.session.add(user)
-# 	db.session.commit()
-# 	return 'User updated'
+@app.put('/users/<int:pk>')
+def update_user_by_pk(pk):
+	data = request.json
+	# user = User.query.get(pk)
+	# user = User(**data)
+	# user.id = data.id
+	# user.first_name = data.first_name
+	# user.last_name = data.last_name
+	# user.age = data.age
+	# user.email = data.email
+	# user.role = data.role
+	# user.phone = data.phone
+
+	db.session.execute(db.update(User).where(User.id == pk).values(**data))
+
+	# db.session.add(user)
+	db.session.commit()
+	return 'User updated'
 
 
 @app.delete('/users/<int:pk>')
@@ -226,7 +235,14 @@ def add_order_to_orders():
 		return 'Can not add this order'
 
 
-#  Здесь будет вьюха обновления заказа
+@app.put('/order/<int:pk>')
+def update_order_by_pk(pk):
+	data = request.json
+
+	db.session.execute(db.update(Order).where(Order.id == pk).values(**data))
+
+	db.session.commit()
+	return 'Order updated'
 
 
 @app.delete('/orders/<int:pk>')
@@ -252,7 +268,14 @@ def add_offer_to_offers():
 		return 'Can not add this offer'
 
 
-#  Здесь будет вьюха обновления предложения
+@app.put('/offer/<int:pk>')
+def update_offer_by_pk(pk):
+	data = request.json
+
+	db.session.execute(db.update(Offer).where(Offer.id == pk).values(**data))
+
+	db.session.commit()
+	return 'Offer updated'
 
 
 @app.delete('/offers/<int:pk>')
