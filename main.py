@@ -1,8 +1,7 @@
 import json
 
-from flask import Flask, jsonify
+from flask import Flask, jsonify, request
 from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy import text
 from sqlalchemy.orm import relationship
 
 app = Flask(__name__)
@@ -19,6 +18,7 @@ db = SQLAlchemy(app)
 db.init_app(app)
 app.app_context().push()
 
+#  Путь к json файлам для заполнения таблиц.
 path_users = './data/users.json'
 path_orders = './data/orders.json'
 path_offers = './data/offers.json'
@@ -47,7 +47,7 @@ class Order(db.Model):
 	customer_id = db.Column(db.Integer)
 	executor_id = db.Column(db.Integer)
 
-# offer = db.relationship("Offer")
+	# offer = db.relationship("Offer")
 
 
 class Offer(db.Model):
@@ -56,7 +56,7 @@ class Offer(db.Model):
 	order_id = db.Column(db.Integer)  # , db.ForeignKey("order.id"))
 	executor_id = db.Column(db.Integer)  # , db.ForeignKey("order.executor_id"))
 
-# order = relationship("Order")
+	# order = relationship("Order")
 
 
 db.create_all()  # Создать таблицы
@@ -177,6 +177,93 @@ def get_offer_by_pk(pk):
 			"order_id": offer.order_id,
 			"executor_id": offer.executor_id,
 	})
+
+
+#  Создание нового пользователя
+@app.post('/users')
+def add_user_to_users():
+	data = request.json
+	try:
+		user = User(**data)
+		db.session.add(user)
+		db.session.commit()
+		return f'{user} added'
+	except:
+		return 'Can not add this user'
+
+
+#  Пока не работает :(((
+# @app.put('/users/<int:pk>')
+# def update_user_by_pk(pk):
+# 	data = request.json
+# 	user = User.query.get(pk)
+# 	user = User(**data)
+# 	db.session.add(user)
+# 	db.session.commit()
+# 	return 'User updated'
+
+
+@app.delete('/users/<int:pk>')
+def delete_user_by_pk(pk):
+	try:
+		user = User.query.get(pk)
+		db.session.delete(user)
+		db.session.commit()
+		return f'User{pk} deleted'
+	except:
+		return 'Такой пользователь не найден'
+
+
+@app.post('/orders')
+def add_order_to_orders():
+	data = request.json
+	try:
+		order = Order(**data)
+		db.session.add(order)
+		db.session.commit()
+		return f'{order} added'
+	except:
+		return 'Can not add this order'
+
+
+#  Здесь будет вьюха обновления заказа
+
+
+@app.delete('/orders/<int:pk>')
+def delete_order_by_pk(pk):
+	try:
+		order = Order.query.get(pk)
+		db.session.delete(order)
+		db.session.commit()
+		return f'Order{pk} deleted'
+	except:
+		return 'Такой заказ не найден'
+
+
+@app.post('/offers')
+def add_offer_to_offers():
+	data = request.json
+	try:
+		offer = Offer(**data)
+		db.session.add(offer)
+		db.session.commit()
+		return f'{offer} added'
+	except:
+		return 'Can not add this offer'
+
+
+#  Здесь будет вьюха обновления предложения
+
+
+@app.delete('/offers/<int:pk>')
+def delete_offer_by_pk(pk):
+	try:
+		offer = Offer.query.get(pk)
+		db.session.delete(offer)
+		db.session.commit()
+		return f'Offer{pk} deleted'
+	except:
+		return 'Такое предложение не найдено'
 
 
 if __name__ == '__main__':
